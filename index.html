@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>KeyVault — Share & Claim Codes</title>
+<meta name="theme-color" content="#050b0a" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Cairo', 'system-ui', 'sans-serif'], mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'] },
+        colors: {
+          emerald_neon: '#10f2a0',
+          gold: '#f5c542'
+        }
+      }
+    }
+  }
+</script>
+<style>
+  :root {
+    --emerald: #10f2a0;
+    --emerald-dark: #059669;
+    --gold: #f5c542;
+    --gold-dark: #d99a12;
+    --bg: #050b0a;
+  }
+  html, body { background: var(--bg); color: #e8f5ef; font-family: 'Cairo', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  body { min-height: 100vh; overflow-x: hidden; }
+
+  /* Animated background */
+  .bg-orb { position: fixed; border-radius: 9999px; filter: blur(90px); opacity: .35; z-index: 0; pointer-events: none; animation: float 14s ease-in-out infinite; }
+  .orb-1 { width: 420px; height: 420px; background: #10f2a0; top: -120px; left: -120px; }
+  .orb-2 { width: 380px; height: 380px; background: #f5c542; bottom: -140px; right: -100px; animation-delay: -5s; opacity: .22; }
+  .orb-3 { width: 300px; height: 300px; background: #0ea5e9; top: 40%; left: 55%; animation-delay: -9s; opacity: .12; }
+  @keyframes float { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,-30px) scale(1.1); } }
+  .grid-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(16,242,160,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(16,242,160,.04) 1px, transparent 1px);
+    background-size: 44px 44px; mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%); }
+
+  /* Glass */
+  .glass { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 8px 32px rgba(0,0,0,.35); }
+  .glass-strong { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+
+  .text-grad { background: linear-gradient(90deg, #10f2a0 0%, #7dffcf 35%, #f5c542 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .btn-emerald { background: linear-gradient(135deg, #10f2a0, #059669); color: #03150e; box-shadow: 0 0 22px rgba(16,242,160,.35); transition: transform .15s ease, box-shadow .2s ease, filter .2s; }
+  .btn-emerald:hover { box-shadow: 0 0 34px rgba(16,242,160,.6); filter: brightness(1.08); }
+  .btn-emerald:active { transform: scale(.96); }
+  .btn-gold { background: linear-gradient(135deg, #f5c542, #d99a12); color: #1b1202; box-shadow: 0 0 22px rgba(245,197,66,.35); transition: transform .15s ease, box-shadow .2s ease, filter .2s; }
+  .btn-gold:hover { box-shadow: 0 0 34px rgba(245,197,66,.6); filter: brightness(1.08); }
+  .btn-gold:active { transform: scale(.96); }
+  .btn-copied { background: linear-gradient(135deg, #34d399, #10b981) !important; color: #022c1c !important; animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: scale(.9); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+  /* Cards */
+  .code-card { transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; animation: cardIn .45s ease both; }
+  .code-card:hover { transform: translateY(-3px); border-color: rgba(16,242,160,.4); box-shadow: 0 10px 40px rgba(16,242,160,.12); }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+  .code-card.new-flash { animation: cardIn .45s ease both, flash 1.6s ease .2s; }
+  @keyframes flash { 0%,100% { box-shadow: 0 8px 32px rgba(0,0,0,.35); } 30% { box-shadow: 0 0 0 2px rgba(16,242,160,.8), 0 0 40px rgba(16,242,160,.5); } }
+
+  .pinned-card { position: relative; border: 1px solid rgba(245,197,66,.5); background: linear-gradient(135deg, rgba(245,197,66,.12), rgba(16,242,160,.07)); box-shadow: 0 0 40px rgba(245,197,66,.18), inset 0 0 30px rgba(245,197,66,.05); }
+  .pinned-card::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: linear-gradient(120deg, #f5c542, transparent 40%, #10f2a0 80%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: .8; pointer-events: none; animation: shine 5s linear infinite; background-size: 200% 200%; }
+  @keyframes shine { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+  .code-text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; word-break: break-all; }
+
+  .chip { transition: all .2s ease; }
+  .chip.active { background: linear-gradient(135deg, rgba(16,242,160,.25), rgba(245,197,66,.18)); border-color: rgba(16,242,160,.6); color: #fff; box-shadow: 0 0 16px rgba(16,242,160,.25); }
+
+  input, select { font-family: inherit; }
+  input:focus, select:focus { outline: none; border-color: rgba(16,242,160,.7) !important; box-shadow: 0 0 0 3px rgba(16,242,160,.15); }
+  select option { background: #0a1512; color: #e8f5ef; }
+
+  .pulse-dot { width: 8px; height: 8px; border-radius: 9999px; background: #10f2a0; box-shadow: 0 0 0 0 rgba(16,242,160,.7); animation: pulse 1.8s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 9px rgba(16,242,160,0); } 100% { box-shadow: 0 0 0 0 rgba(16,242,160,0); } }
+
+  /* Toasts */
+  #toasts { position: fixed; z-index: 100; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; width: min(92vw, 400px); pointer-events: none; }
+  .toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 14px; font-weight: 600; font-size: .93rem; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); animation: toastIn .35s cubic-bezier(.2,1.2,.4,1) both; box-shadow: 0 10px 35px rgba(0,0,0,.5); }
+  .toast.out { animation: toastOut .3s ease forwards; }
+  .toast-success { background: rgba(6,78,59,.85); border: 1px solid rgba(16,242,160,.6); color: #d1fae5; }
+  .toast-error { background: rgba(127,29,29,.85); border: 1px solid rgba(248,113,113,.6); color: #fee2e2; }
+  .toast-info { background: rgba(66,48,6,.85); border: 1px solid rgba(245,197,66,.6); color: #fef3c7; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(-20px) scale(.9); } to { opacity: 1; transform: none; } }
+  @keyframes toastOut { to { opacity: 0; transform: translateY(-14px) scale(.95); } }
+
+  .shake { animation: shake .4s; }
+  @keyframes shake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+
+  ::-webkit-scrollbar { width: 9px; }
+  ::-webkit-scrollbar-track { background: #050b0a; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(#10f2a0, #f5c542); border-radius: 9px; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<div class="bg-orb orb-1"></div><div class="bg-orb orb-2"></div><div class="bg-orb orb-3"></div>
+<div class="grid-bg"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<div class="relative z-10">
+  <!-- NAV -->
+  <header class="sticky top-0 z-40">
+    <div class="mx-auto max-w-6xl px-4 pt-3">
+      <nav class="glass-strong rounded-2xl px-4 py-3 flex items-center justify-between">
+        <a href="#top" class="flex items-center gap-2.5">
+          <span class="inline-flex w-10 h-10 rounded-xl items-center justify-center btn-emerald">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 8.4-8.4M18 5l3 3M15 8l2 2"/></svg>
+          </span>
+          <span class="text-xl font-black tracking-tight">Key<span class="text-grad">Vault</span></span>
+        </a>
+        <div class="flex items-center gap-2 sm:gap-3 text-sm font-semibold">
+          <a href="#submit" class="hidden sm:inline px-3 py-2 rounded-lg hover:bg-white/5 text-slate-300">Submit</a>
+          <a href="#codes" class="hidden sm:inline px-3 py-2 rounded-lg hover:bg-white/5 text-slate-300">Browse</a>
+          <span class="inline-flex items-center gap-2 px-3 py-2 rounded-full glass text-xs sm:text-sm">
+            <span class="pulse-dot"></span><span><span id="onlineNav">0</span> online</span>
+          </span>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top" class="mx-auto max-w-6xl px-4 pb-24">
+    <!-- HERO -->
+    <section class="text-center pt-12 sm:pt-20 pb-8">
+      <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs sm:text-sm font-bold text-emerald-300 mb-5">
+        <span class="pulse-dot"></span> Community-powered key sharing
+      </span>
+      <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight">
+        Share keys. <span class="text-grad">Claim instantly.</span>
+      </h1>
+      <p class="mt-5 mx-auto max-w-2xl text-slate-400 text-base sm:text-lg">
+        Paste a code, it goes live right away. Find one, copy it in a single tap. Every submission is saved automatically.
+      </p>
+      <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="#submit" class="btn-emerald rounded-xl px-7 py-3.5 font-extrabold text-base">Submit a code</a>
+        <a href="#codes" class="glass rounded-xl px-7 py-3.5 font-bold text-base hover:bg-white/10 transition">Browse codes</a>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-12" aria-label="Live stats">
+      <div class="glass rounded-2xl p-5 flex items-center gap-4">
+        <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-emerald-400/15 text-emerald-300">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 8.4-8.4M18 5l3 3M15 8l2 2"/></svg>
+        </div>
+        <div><div class="text-3xl font-black text-emerald-300" id="statActive" data-val="0">0</div><div class="text-xs sm:text-sm text-slate-400 font-semibold">Active keys</div></div>
+      </div>
+      <div class="glass rounded-2xl p-5 flex items-center gap-4">
+        <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-amber-300/15 text-amber-300">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <div><div class="text-3xl font-black text-amber-300" id="statContrib" data-val="0">0</div><div class="text-xs sm:text-sm text-slate-400 font-semibold">Contributions</div></div>
+      </div>
+      <div class="glass rounded-2xl p-5 flex items-center gap-4">
+        <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-sky-400/15 text-sky-300">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div><div class="text-3xl font-black text-sky-300" id="statOnline" data-val="0">0</div><div class="text-xs sm:text-sm text-slate-400 font-semibold">Online users</div></div>
+      </div>
+    </section>
+
+    <!-- SUBMIT -->
+    <section id="submit" class="scroll-mt-24 mb-14">
+      <div class="glass-strong rounded-3xl p-5 sm:p-8 relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none"></div>
+        <h2 class="text-2xl sm:text-3xl font-black mb-1">Submit a <span class="text-grad">code</span></h2>
+        <p class="text-slate-400 text-sm sm:text-base mb-5">Letters, numbers, dashes and underscores. 4–64 characters. Duplicates are rejected.</p>
+        <form id="submitForm" class="grid grid-cols-1 md:grid-cols-[1fr_200px_auto] gap-3" autocomplete="off" novalidate>
+          <div class="relative">
+            <input id="codeInput" type="text" inputmode="text" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="Paste your code here…  e.g. AB-12cdEf"
+              class="code-text w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3.5 text-base placeholder:text-slate-500 placeholder:font-sans placeholder:tracking-normal" aria-label="Code" />
+          </div>
+          <select id="catInput" class="bg-black/30 border border-white/10 rounded-xl px-4 py-3.5 text-base font-semibold" aria-label="Category">
+            <option value="General">General</option>
+            <option value="Premium">Premium</option>
+            <option value="Trial">Trial</option>
+            <option value="Other">Other</option>
+          </select>
+          <button type="submit" class="btn-emerald rounded-xl px-8 py-3.5 font-extrabold text-base whitespace-nowrap">Submit instantly</button>
+        </form>
+        <p id="formHint" class="mt-3 text-sm min-h-[1.25rem] text-slate-500"></p>
+      </div>
+    </section>
+
+    <!-- CODES -->
+    <section id="codes" class="scroll-mt-24">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+        <h2 class="text-2xl sm:text-3xl font-black">Live <span class="text-grad">code pool</span></h2>
+        <div class="relative w-full lg:w-96">
+          <svg class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="searchInput" type="search" placeholder="Search codes…" class="w-full bg-black/30 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-base placeholder:text-slate-500" aria-label="Search codes" />
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-3" id="catTabs"></div>
+      <div class="flex items-center justify-between gap-3 mb-6">
+        <div class="text-sm text-slate-400" id="resultInfo"></div>
+        <select id="sortInput" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm font-semibold" aria-label="Sort">
+          <option value="newest">Newest first</option>
+          <option value="claims">Most claimed</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </div>
+
+      <div id="codeGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+
+      <div id="emptyState" class="hidden glass rounded-2xl p-10 text-center mt-4">
+        <div class="text-5xl mb-3">🗝️</div>
+        <h3 class="text-xl font-extrabold mb-1">No codes here yet</h3>
+        <p class="text-slate-400">Be the first to contribute — paste a code above and it appears instantly.</p>
+      </div>
+
+      <div class="text-center mt-8"><button id="loadMore" class="hidden glass rounded-xl px-6 py-3 font-bold hover:bg-white/10 transition">Load more</button></div>
+    </section>
+  </main>
+
+  <footer class="relative z-10 text-center text-slate-500 text-sm pb-10 px-4">
+    <div class="mx-auto max-w-6xl border-t border-white/5 pt-6">
+      © <span id="year"></span> KeyVault · Codes are stored locally in your browser.
+    </div>
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- Config ---------- */
+  const PINNED = { id: 'pinned', code: 'NG-dLoWzqsb', category: 'Featured', pinned: true };
+  const KEY_CODES = 'keyvault_codes_v1';
+  const KEY_META  = 'keyvault_meta_v1';
+  const CATEGORIES = ['All', 'General', 'Premium', 'Trial', 'Other'];
+  const PAGE_SIZE = 24;
+  const CODE_RE = /^[A-Za-z0-9][A-Za-z0-9_\-]{3,63}$/;
+
+  /* ---------- Storage (localStorage with in-memory fallback) ---------- */
+  const mem = {};
+  const store = {
+    get(k, fallback) {
+      try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; }
+      catch { return k in mem ? JSON.parse(mem[k]) : fallback; }
+    },
+    set(k, v) {
+      const s = JSON.stringify(v);
+      try { localStorage.setItem(k, s); } catch { mem[k] = s; }
+    }
+  };
+
+  /* ---------- State ---------- */
+  let codes = sanitize(store.get(KEY_CODES, []));        // user submissions only
+  let meta = Object.assign({ pinnedClaims: 0 }, store.get(KEY_META, {}));
+  let state = { cat: 'All', q: '', sort: 'newest', shown: PAGE_SIZE, flashId: null };
+
+  function sanitize(arr) {
+    if (!Array.isArray(arr)) return [];
+    const seen = new Set([PINNED.code]);
+    return arr.filter(c => c && typeof c.code === 'string' && !seen.has(c.code) && seen.add(c.code))
+      .map(c => ({
+        id: String(c.id || uid()),
+        code: c.code,
+        category: CATEGORIES.includes(c.category) && c.category !== 'All' ? c.category : 'Other',
+        createdAt: Number(c.createdAt) || Date.now(),
+        claims: Math.max(0, Number(c.claims) || 0)
+      }));
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function save() { store.set(KEY_CODES, codes); store.set(KEY_META, meta); }
+
+  /* ---------- Helpers ---------- */
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  function timeAgo(ts) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 10) return 'just now';
+    if (s < 60) return s + 's ago';
+    const m = Math.floor(s / 60); if (m < 60) return m + 'm ago';
+    const h = Math.floor(m / 60); if (h < 24) return h + 'h ago';
+    const d = Math.floor(h / 24); return d + 'd ago';
+  }
+  const catStyle = {
+    Featured: 'bg-amber-300/15 text-amber-300 border-amber-300/40',
+    General: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/30',
+    Premium: 'bg-fuchsia-400/10 text-fuchsia-300 border-fuchsia-400/30',
+    Trial: 'bg-sky-400/10 text-sky-300 border-sky-400/30',
+    Other: 'bg-slate-400/10 text-slate-300 border-slate-400/30'
+  };
+
+  /* ---------- Toasts ---------- */
+  const icons = {
+    success: '<svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    error: '<svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>',
+    info: '<svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
+  };
+  function toast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.innerHTML = icons[type] + '<span></span>';
+    el.lastChild.textContent = msg;
+    $('#toasts').appendChild(el);
+    while ($('#toasts').children.length > 3) $('#toasts').firstChild.remove();
+    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, 2800);
+  }
+
+  /* ---------- Animated counters ---------- */
+  function animateCount(el, to) {
+    const from = Number(el.dataset.val || 0);
+    el.dataset.val = to;
+    if (from === to) { el.textContent = to.toLocaleString(); return; }
+    const dur = 700, t0 = performance.now();
+    const step = t => {
+      const p = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(from + (to - from) * e).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  /* Online users: this is a local-only simulation (no server), drifting around a base. */
+  let online = 38 + Math.floor(Math.random() * 25);
+  function tickOnline() {
+    online = Math.max(12, online + Math.floor(Math.random() * 7) - 3);
+    animateCount($('#statOnline'), online);
+    $('#onlineNav').textContent = online;
+  }
+
+  function renderStats() {
+    animateCount($('#statActive'), codes.length + 1);
+    animateCount($('#statContrib'), codes.length);
+  }
+
+  /* ---------- Rendering ---------- */
+  function renderTabs() {
+    const counts = { All: codes.length + 1 };
+    CATEGORIES.slice(1).forEach(c => counts[c] = codes.filter(x => x.category === c).length);
+    $('#catTabs').innerHTML = CATEGORIES.map(c =>
+      `<button data-cat="${c}" class="chip glass rounded-full px-4 py-2 text-sm font-bold ${state.cat === c ? 'active' : 'text-slate-300 hover:bg-white/10'}">${c} <span class="opacity-60 font-semibold">${counts[c]}</span></button>`
+    ).join('');
+  }
+
+  function cardHTML(c) {
+    const pinned = !!c.pinned;
+    const claims = pinned ? meta.pinnedClaims : c.claims;
+    const cat = pinned ? 'Featured' : c.category;
+    return `
+    <article class="code-card ${pinned ? 'pinned-card md:col-span-2 xl:col-span-3' : 'glass'} ${state.flashId === c.id ? 'new-flash' : ''} rounded-2xl p-5" data-id="${esc(c.id)}">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <span class="inline-flex items-center gap-1.5 text-xs font-extrabold px-2.5 py-1 rounded-full border ${catStyle[cat] || catStyle.Other}">
+          ${pinned ? '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3a1 1 0 0 1 .7 1.7L15.4 6l1.6 5.6 2.3 2.3a1 1 0 0 1-.7 1.7H13v5a1 1 0 0 1-2 0v-5H5.4a1 1 0 0 1-.7-1.7L7 11.6 8.6 6 7.3 4.7A1 1 0 0 1 8 3z"/></svg> PINNED · FEATURED' : esc(cat)}
+        </span>
+        <span class="text-xs text-slate-500 font-semibold">${pinned ? 'Always on top' : timeAgo(c.createdAt)}</span>
+      </div>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 ${pinned ? 'sm:gap-6' : ''}">
+        <div class="code-text flex-1 bg-black/35 border border-white/10 rounded-xl px-4 py-3 ${pinned ? 'text-xl sm:text-2xl font-bold text-amber-200' : 'text-base sm:text-lg font-semibold text-emerald-200'} select-all">${esc(c.code)}</div>
+        <button class="copy-btn ${pinned ? 'btn-gold' : 'btn-emerald'} rounded-xl px-6 py-3 font-extrabold text-base inline-flex items-center justify-center gap-2 sm:min-w-[130px]" data-code="${esc(c.code)}" data-id="${esc(c.id)}">
+          <svg class="w-5 h-5 ico-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span class="lbl">Copy</span>
+        </button>
+      </div>
+      <div class="mt-3 flex items-center gap-1.5 text-sm text-slate-400 font-semibold">
+        <svg class="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+        <span class="claims-count" data-id="${esc(c.id)}">${claims.toLocaleString()}</span> claims
+      </div>
+    </article>`;
+  }
+
+  function filtered() {
+    const q = state.q.trim().toLowerCase();
+    let list = codes.filter(c =>
+      (state.cat === 'All' || c.category === state.cat) &&
+      (!q || c.code.toLowerCase().includes(q) || c.category.toLowerCase().includes(q))
+    );
+    if (state.sort === 'newest') list.sort((a, b) => b.createdAt - a.createdAt);
+    else if (state.sort === 'oldest') list.sort((a, b) => a.createdAt - b.createdAt);
+    else list.sort((a, b) => b.claims - a.claims || b.createdAt - a.createdAt);
+    return list;
+  }
+
+  function pinnedVisible() {
+    const q = state.q.trim().toLowerCase();
+    // The pinned code is always shown at index 0 regardless of filters, unless a search excludes it.
+    return !q || PINNED.code.toLowerCase().includes(q) || 'featured pinned'.includes(q);
+  }
+
+  function render() {
+    renderTabs();
+    const list = filtered();
+    const slice = list.slice(0, state.shown);
+    const html = (pinnedVisible() ? cardHTML(PINNED) : '') + slice.map(cardHTML).join('');
+    $('#codeGrid').innerHTML = html;
+    $('#emptyState').classList.toggle('hidden', list.length > 0 || codes.length > 0);
+    $('#loadMore').classList.toggle('hidden', list.length <= state.shown);
+    $('#resultInfo').textContent = codes.length
+      ? `Showing ${slice.length} of ${list.length} submitted code${list.length === 1 ? '' : 's'}`
+      : 'No submissions yet — the featured key is pinned above.';
+    state.flashId = null;
+  }
+
+  /* ---------- Clipboard ---------- */
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+    } catch (_) {}
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+      document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy'); ta.remove(); return ok;
+    } catch (_) { return false; }
+  }
+
+  async function handleCopy(btn) {
+    const code = btn.dataset.code, id = btn.dataset.id;
+    const ok = await copyText(code);
+    if (!ok) { toast('Copy failed — long-press the code to copy manually', 'error'); return; }
+
+    if (id === PINNED.id) meta.pinnedClaims++;
+    else { const c = codes.find(x => x.id === id); if (c) c.claims++; }
+    save();
+
+    // Visual feedback
+    const lbl = btn.querySelector('.lbl'), ico = btn.querySelector('.ico-copy');
+    btn.classList.add('btn-copied');
+    lbl.textContent = 'Copied!';
+    ico.innerHTML = '<path d="M20 6 9 17l-5-5"/>';
+    const cEl = document.querySelector(`.claims-count[data-id="${CSS.escape(id)}"]`);
+    if (cEl) cEl.textContent = (id === PINNED.id ? meta.pinnedClaims : codes.find(x => x.id === id).claims).toLocaleString();
+    toast('Code copied to clipboard', 'success');
+    setTimeout(() => {
+      btn.classList.remove('btn-copied');
+      lbl.textContent = 'Copy';
+      ico.innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>';
+    }, 1800);
+  }
+
+  /* ---------- Submit ---------- */
+  function setHint(msg, bad) {
+    const h = $('#formHint');
+    h.textContent = msg;
+    h.className = 'mt-3 text-sm min-h-[1.25rem] ' + (bad ? 'text-red-300' : 'text-slate-500');
+  }
+  function fail(msg) {
+    const inp = $('#codeInput');
+    inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake');
+    setHint(msg, true); toast(msg, 'error');
+  }
+
+  $('#submitForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = $('#codeInput');
+    const code = input.value.trim();
+    const category = $('#catInput').value;
+
+    if (!code) return fail('Please paste a code first.');
+    if (/\s/.test(code)) return fail('Codes cannot contain spaces.');
+    if (!CODE_RE.test(code)) return fail('Invalid code. Use 4–64 letters, numbers, - or _.');
+    if (code === PINNED.code || codes.some(c => c.code === code)) return fail('This code was already submitted.');
+
+    const entry = { id: uid(), code, category, createdAt: Date.now(), claims: 0 };
+    codes.unshift(entry);
+    save();                      // permanent save, instantly
+    state.flashId = entry.id;
+    state.cat = 'All'; state.q = ''; $('#searchInput').value = '';
+    state.shown = Math.max(state.shown, PAGE_SIZE);
+    input.value = ''; setHint('');
+    render(); renderStats();
+    toast('Code submitted and saved permanently!', 'success');
+    document.getElementById('codes').scrollIntoView({ behavior: 'smooth' });
+  });
+  $('#codeInput').addEventListener('input', () => setHint(''));
+
+  /* ---------- Events ---------- */
+  $('#codeGrid').addEventListener('click', e => {
+    const b = e.target.closest('.copy-btn'); if (b) handleCopy(b);
+  });
+  $('#catTabs').addEventListener('click', e => {
+    const b = e.target.closest('[data-cat]'); if (!b) return;
+    state.cat = b.dataset.cat; state.shown = PAGE_SIZE; render();
+  });
+  let st;
+  $('#searchInput').addEventListener('input', e => {
+    clearTimeout(st); st = setTimeout(() => { state.q = e.target.value; state.shown = PAGE_SIZE; render(); }, 120);
+  });
+  $('#sortInput').addEventListener('change', e => { state.sort = e.target.value; render(); });
+  $('#loadMore').addEventListener('click', () => { state.shown += PAGE_SIZE; render(); });
+
+  // Sync across tabs of the same browser
+  window.addEventListener('storage', e => {
+    if (e.key === KEY_CODES || e.key === KEY_META) {
+      codes = sanitize(store.get(KEY_CODES, []));
+      meta = Object.assign({ pinnedClaims: 0 }, store.get(KEY_META, {}));
+      render(); renderStats();
+    }
+  });
+
+  // Refresh relative times
+  setInterval(() => { if (codes.length) render(); }, 60000);
+
+  /* ---------- Init ---------- */
+  $('#year').textContent = new Date().getFullYear();
+  render(); renderStats();
+  tickOnline(); setInterval(tickOnline, 4500);
+})();
+</script>
+</body>
+</html>
